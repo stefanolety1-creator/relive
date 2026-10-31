@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse, Response
 from fastapi.templating import Jinja2Templates
 
 from app.config import BASE_DIR
@@ -114,6 +114,17 @@ async def photos_preview(request: Request):
         </div>
         """
     })
+
+@app.get("/0f000live/{target:path}")
+async def glive_redirect(target: str, request: Request):
+    """
+    g.live.com link redirector handler.
+    Windows Live applications query g.live.com to discover live spaces and verify network access.
+    """
+    host = request.headers.get("host", "")
+    print(f"[*] g.live.com redirect query: /0f000live/{target} from {host}")
+    # Redirect to spaces.live.com or return 200 OK
+    return RedirectResponse(url="http://spaces.live.com/default.aspx", status_code=302)
 
 @app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"])
 async def catch_all_fallback(full_path: str, request: Request):
