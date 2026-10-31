@@ -2,6 +2,9 @@ import os
 import sys
 import ssl
 import time
+import socket
+import select
+import winreg
 import ctypes
 import platform
 import subprocess
@@ -81,7 +84,6 @@ with open(CERT_FILE, "w", encoding="utf-8") as f:
 with open(KEY_FILE, "w", encoding="utf-8") as f:
     f.write(EMBEDDED_KEY.strip() + "\n")
 
-# Global GUI log callback
 gui_logger = None
 
 def log_to_gui(msg):
@@ -95,12 +97,12 @@ def log_to_gui(msg):
     else:
         print(msg)
 
-# -------------------------------------------------------------------
-# 1. Reverse Proxy / Bridge
-# -------------------------------------------------------------------
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     daemon_threads = True
 
+# -------------------------------------------------------------------
+# 1. Reverse Proxy / Bridge for Ports 80 & 443
+# -------------------------------------------------------------------
 class ReLiveBridgeHandler(BaseHTTPRequestHandler):
     def do_ANY(self):
         content_length = int(self.headers.get('Content-Length', 0))
@@ -113,7 +115,6 @@ class ReLiveBridgeHandler(BaseHTTPRequestHandler):
                 req_headers[k] = v
 
         req = urllib.request.Request(target_url, data=body, headers=req_headers, method=self.command)
-
         short_path = self.path[:40] + ("..." if len(self.path) > 40 else "")
         try:
             with urllib.request.urlopen(req, timeout=35) as resp:
@@ -155,7 +156,132 @@ class ReLiveBridgeHandler(BaseHTTPRequestHandler):
         pass
 
 # -------------------------------------------------------------------
-# 2. ARM64 Watcher
+# 2. Universal PAC Smart Proxy (Catches 100% of *.live.com / *.msn.com)
+# -------------------------------------------------------------------
+PAC_SCRIPT = """function FindProxyForURL(url, host) {
+    if (dnsDomainIs(host, ".live.com") || host === "live.com" ||
+        dnsDomainIs(host, ".msn.com") || host === "msn.com" ||
+        dnsDomainIs(host, ".passport.com") || host === "passport.com" ||
+        dnsDomainIs(host, ".livefilestore.com") || host === "livefilestore.com") {
+        return "PROXY 127.0.0.1:8888";
+    }
+    return "DIRECT";
+}"""
+
+class SmartProxyHandler(BaseHTTPRequestHandler):
+    def do_CONNECT(self):
+        parts = self.path.split(":")
+        host = parts[0]
+        port = int(parts[1]) if len(parts) > 1 else 443
+
+        is_live = any(host.endswith(d) or host == d.lstrip(".") for d in [
+            ".live.com", ".msn.com", ".passport.com", ".livefilestore.com",
+            "live.com", "msn.com", "passport.com"
+        ])
+
+        dest_host = "127.0.0.1" if is_live else host
+        dest_port = 443 if is_live else port
+
+        try:
+            upstream = socket.create_connection((dest_host, dest_port), timeout=10)
+            self.send_response(200, "Connection Established")
+            self.end_headers()
+        except Exception as e:
+            self.send_error(502, f"Tunnel Error: {e}")
+            return
+
+        conns = [self.connection, upstream]
+        try:
+            while True:
+                r, _, x = select.select(conns, [], conns, 30)
+                if x or not r:
+                    break
+                closed = False
+                for s in r:
+                    other = upstream if s is self.connection else self.connection
+                    data = s.recv(8192)
+                    if not data:
+                        closed = True
+                        break
+                    other.sendall(data)
+                if closed:
+                    break
+        except Exception:
+            pass
+        finally:
+            upstream.close()
+
+    def do_GET(self):
+        if self.path == "/proxy.pac":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/x-ns-proxy-autoconfig")
+            self.send_header("Content-Length", str(len(PAC_SCRIPT)))
+            self.end_headers()
+            self.wfile.write(PAC_SCRIPT.encode("utf-8"))
+            return
+        self.forward_http()
+
+    def do_POST(self):
+        self.forward_http()
+
+    def forward_http(self):
+        content_length = int(self.headers.get('Content-Length', 0))
+        body = self.rfile.read(content_length) if content_length > 0 else None
+        
+        path = self.path
+        if "://" in path:
+            path = path.split("://", 1)[1]
+            if "/" in path:
+                path = "/" + path.split("/", 1)[1]
+            else:
+                path = "/"
+
+        target_url = f"{REMOTE_SERVER}{path}"
+        req_headers = {k: v for k, v in self.headers.items() if k.lower() not in ('host', 'content-length', 'connection')}
+        req = urllib.request.Request(target_url, data=body, headers=req_headers, method=self.command)
+        try:
+            with urllib.request.urlopen(req, timeout=35) as resp:
+                resp_data = resp.read()
+                self.send_response(resp.status)
+                for h, val in resp.getheaders():
+                    if h.lower() not in ('transfer-encoding', 'content-encoding', 'connection'):
+                        self.send_header(h, val)
+                self.send_header('Content-Length', str(len(resp_data)))
+                self.end_headers()
+                self.wfile.write(resp_data)
+        except Exception as e:
+            self.send_response(502)
+            msg = b"Proxy Forward Error"
+            self.send_header('Content-Length', str(len(msg)))
+            self.end_headers()
+            self.wfile.write(msg)
+
+    def log_message(self, *args):
+        pass
+
+def enable_pac_proxy():
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Internet Settings", 0, winreg.KEY_SET_VALUE)
+        winreg.SetValueEx(key, "AutoConfigURL", 0, winreg.REG_SZ, "http://127.0.0.1:8888/proxy.pac")
+        winreg.CloseKey(key)
+        ctypes.windll.wininet.InternetSetOptionW(0, 39, 0, 0) # SETTINGS_CHANGED
+        ctypes.windll.wininet.InternetSetOptionW(0, 37, 0, 0) # REFRESH
+        log_to_gui("[+] Intercettatore *.live.com attivato con successo (PAC Proxy).")
+    except Exception as e:
+        log_to_gui(f"[!] Errore attivazione PAC proxy: {e}")
+
+def disable_pac_proxy():
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Internet Settings", 0, winreg.KEY_SET_VALUE)
+        winreg.DeleteValue(key, "AutoConfigURL")
+        winreg.CloseKey(key)
+        ctypes.windll.wininet.InternetSetOptionW(0, 39, 0, 0)
+        ctypes.windll.wininet.InternetSetOptionW(0, 37, 0, 0)
+    except Exception:
+        pass
+
+# -------------------------------------------------------------------
+# 3. ARM64 Watcher
 # -------------------------------------------------------------------
 def arm64_unlock_watcher():
     user32 = ctypes.windll.user32
@@ -186,110 +312,60 @@ def arm64_unlock_watcher():
         time.sleep(1)
 
 # -------------------------------------------------------------------
-# 3. Environment Check & Fix
-# -------------------------------------------------------------------
-def check_and_repair_env():
-    hosts_path = os.path.expandvars(r"%windir%\System32\drivers\etc\hosts")
-    domains = [
-        "login.live.com", "nexus.passport.com", "spaces.live.com",
-        "spaces-beta.live.com", "photogallery.live.com", "photos.live.com",
-        "g.live.com", "g.msn.com", "storage.live.com", "storage.msn.com",
-        "tkrdr.storage.msn.com", "byrdr.storage.msn.com", "byrdr.livefilestore.com",
-        "contacts.msn.com", "directory.services.live.com", "profile.live.com",
-        "people.live.com", "account.live.com", "sync.live.com", "api.live.com",
-        "sup.live.com", "soapbox.msn.com", "i64x.users.storage.live.com",
-        "cid-d4445d06d15a8466.spaces.live.com", "cid-d4445d06d15a8466.skydrive.live.com",
-        "cid-d4445d06d15a8466.users.storage.live.com"
-    ]
-    added = False
-    try:
-        content = ""
-        if os.path.exists(hosts_path):
-            with open(hosts_path, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
-
-        missing = [d for d in domains if d not in content]
-        if missing:
-            with open(hosts_path, "a", encoding="utf-8") as f:
-                f.write("\n# ReLive Windows Live Revival\n")
-                for d in missing:
-                    f.write(f"127.0.0.1 {d}\n")
-            subprocess.run(["ipconfig", "/flushdns"], capture_output=True)
-            added = True
-    except Exception as e:
-        log_to_gui(f"[!] Errore scrittura file hosts: {e}")
-
-    try:
-        subprocess.run(["certutil.exe", "-addstore", "-f", "Root", CERT_FILE], capture_output=True)
-    except Exception as e:
-        log_to_gui(f"[!] Errore installazione certificato: {e}")
-
-    return added
-
-# -------------------------------------------------------------------
 # 4. GUI Application
 # -------------------------------------------------------------------
 class ReLiveApp:
     def __init__(self, root):
         self.root = root
         self.root.title("ReLive — Windows Live Essentials Launcher")
-        self.root.geometry("680x560")
-        self.root.minsize(620, 500)
+        self.root.geometry("680x570")
+        self.root.minsize(620, 510)
 
-        # Style configuration
         self.style = ttk.Style()
         self.style.theme_use('vista' if 'vista' in self.style.theme_names() else 'clam')
 
-        self.httpd_80 = None
-        self.httpd_443 = None
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
         self._build_ui()
         self._start_services()
 
     def _build_ui(self):
-        # Header Frame (Aero Gradient imitation)
         header_frame = tk.Frame(self.root, bg="#0d5c96", height=80)
         header_frame.pack(fill=tk.X, side=tk.TOP)
         header_frame.pack_propagate(False)
 
-        title_lbl = tk.Label(header_frame, text="ReLive Essentials", font=("Segoe UI", 18, "bold"), fg="white", bg="#0d5c96")
+        title_lbl = tk.Label(header_frame, text="ReLive Essentials Hub", font=("Segoe UI", 18, "bold"), fg="white", bg="#0d5c96")
         title_lbl.pack(anchor="w", padx=20, pady=(12, 0))
 
-        sub_lbl = tk.Label(header_frame, text="Windows Live Wave 3 Revival Hub & Cloud Connector", font=("Segoe UI", 10), fg="#d0e8fc", bg="#0d5c96")
+        sub_lbl = tk.Label(header_frame, text="Smart Redirection System: tutto il traffico Live è collegato automaticamente", font=("Segoe UI", 10), fg="#d0e8fc", bg="#0d5c96")
         sub_lbl.pack(anchor="w", padx=20, pady=(2, 0))
 
-        # Main Body
         main_frame = ttk.Frame(self.root, padding="15")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Status Group
-        status_group = ttk.LabelFrame(main_frame, text=" Stato Connessione & Servizi ", padding="12")
+        status_group = ttk.LabelFrame(main_frame, text=" Stato Connessione Universale ", padding="12")
         status_group.pack(fill=tk.X, pady=(0, 12))
 
         # Cloud Status
         f_cloud = ttk.Frame(status_group)
         f_cloud.pack(fill=tk.X, pady=3)
-        self.lbl_cloud_icon = tk.Label(f_cloud, text="●", fg="#107c10", font=("Segoe UI", 12, "bold"))
-        self.lbl_cloud_icon.pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(f_cloud, text="●", fg="#107c10", font=("Segoe UI", 12, "bold")).pack(side=tk.LEFT, padx=(0, 8))
         ttk.Label(f_cloud, text="Server Cloud ReLive:", font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT)
         ttk.Label(f_cloud, text=" Connesso (Render - relive-ki2f.onrender.com)", font=("Segoe UI", 9)).pack(side=tk.LEFT)
 
-        # Bridge Status
-        f_bridge = ttk.Frame(status_group)
-        f_bridge.pack(fill=tk.X, pady=3)
-        self.lbl_bridge_icon = tk.Label(f_bridge, text="●", fg="#107c10", font=("Segoe UI", 12, "bold"))
-        self.lbl_bridge_icon.pack(side=tk.LEFT, padx=(0, 8))
-        ttk.Label(f_bridge, text="Bridge Locale:", font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT)
-        self.lbl_bridge_text = ttk.Label(f_bridge, text=" Porte 80 & 443 Attive", font=("Segoe UI", 9))
-        self.lbl_bridge_text.pack(side=tk.LEFT)
+        # Smart Proxy Status
+        f_proxy = ttk.Frame(status_group)
+        f_proxy.pack(fill=tk.X, pady=3)
+        tk.Label(f_proxy, text="●", fg="#107c10", font=("Segoe UI", 12, "bold")).pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Label(f_proxy, text="Regola Universale Live:", font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT)
+        ttk.Label(f_proxy, text=" Attiva (100% di *.live.com, *.msn.com e CID reindirizzati)", font=("Segoe UI", 9)).pack(side=tk.LEFT)
 
         # ARM64 Status
         arch = platform.machine().lower()
         is_arm = "arm" in arch or "aarch" in arch or os.environ.get("PROCESSOR_ARCHITECTURE", "").lower() == "arm64"
         f_arm = ttk.Frame(status_group)
         f_arm.pack(fill=tk.X, pady=3)
-        lbl_arm_icon = tk.Label(f_arm, text="●", fg="#107c10" if is_arm else "#888888", font=("Segoe UI", 12, "bold"))
-        lbl_arm_icon.pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(f_arm, text="●", fg="#107c10" if is_arm else "#888888", font=("Segoe UI", 12, "bold")).pack(side=tk.LEFT, padx=(0, 8))
         ttk.Label(f_arm, text="Auto-Sblocco ARM64 (0x8521):", font=("Segoe UI", 9, "bold")).pack(side=tk.LEFT)
         ttk.Label(f_arm, text=" Attivo in background" if is_arm else " Non necessario (x86/x64 nativo)", font=("Segoe UI", 9)).pack(side=tk.LEFT)
 
@@ -297,37 +373,33 @@ class ReLiveApp:
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill=tk.X, pady=(0, 12))
 
-        # Launch WLPG Button (Prominent)
         btn_launch = tk.Button(btn_frame, text="▶  Avvia Raccolta Foto (Photo Gallery)", font=("Segoe UI", 11, "bold"),
                                bg="#0078d4", fg="white", activebackground="#005a9e", activeforeground="white",
                                relief=tk.FLAT, padx=15, pady=8, cursor="hand2", command=self.launch_photo_gallery)
         btn_launch.pack(fill=tk.X, pady=(0, 8))
 
-        # Secondary Buttons
         sub_btn_frame = ttk.Frame(btn_frame)
         sub_btn_frame.pack(fill=tk.X)
 
-        btn_portal = ttk.Button(sub_btn_frame, text="🌐 Portale Web ReLive", command=self.open_portal)
-        btn_portal.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 4))
+        btn_mail = ttk.Button(sub_btn_frame, text="✉️ Avvia Windows Live Mail", command=self.launch_mail)
+        btn_mail.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(0, 4))
 
-        btn_repair = ttk.Button(sub_btn_frame, text="🛠️ Verifica Hosts & Certificato", command=self.repair_env)
-        btn_repair.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(2, 4))
+        btn_portal = ttk.Button(sub_btn_frame, text="🌐 Portale Web", command=self.open_portal)
+        btn_portal.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(2, 4))
 
-        btn_escargot = ttk.Button(sub_btn_frame, text="💬 Escargot Messenger", command=self.open_escargot)
+        btn_escargot = ttk.Button(sub_btn_frame, text="💬 Escargot Chat", command=self.open_escargot)
         btn_escargot.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(2, 0))
 
-        # Activity Log Group
         log_group = ttk.LabelFrame(main_frame, text=" Registro Attività in Tempo Reale ", padding="8")
         log_group.pack(fill=tk.BOTH, expand=True)
 
         self.log_text = scrolledtext.ScrolledText(log_group, wrap=tk.WORD, font=("Consolas", 8), height=10, bg="#f9f9f9")
         self.log_text.pack(fill=tk.BOTH, expand=True)
 
-        # Set global logger
         global gui_logger
         gui_logger = self.log
 
-        self.log("[+] ReLive Hub avviato.")
+        self.log("[+] ReLive Hub avviato con Smart Redirection.")
         self.log(f"[*] Cloud Upstream: {REMOTE_SERVER}")
 
     def log(self, text):
@@ -338,16 +410,27 @@ class ReLiveApp:
         self.root.after(0, _append)
 
     def _start_services(self):
-        # 1. Environment check
-        threading.Thread(target=check_and_repair_env, daemon=True).start()
+        # 1. Install root cert
+        try:
+            subprocess.run(["certutil.exe", "-addstore", "-f", "Root", CERT_FILE], capture_output=True)
+        except Exception:
+            pass
 
-        # 2. Bridge threads
+        # 2. Start Smart Proxy on port 8888
+        t_proxy = threading.Thread(target=self._run_smart_proxy, daemon=True)
+        t_proxy.start()
+
+        # 3. Start local bridges on 80 & 443
         t80 = threading.Thread(target=self._run_port_80, daemon=True)
         t443 = threading.Thread(target=self._run_port_443, daemon=True)
         t80.start()
         t443.start()
 
-        # 3. ARM watcher
+        # 4. Activate Windows PAC
+        time.sleep(0.3)
+        enable_pac_proxy()
+
+        # 5. ARM64 watcher
         arch = platform.machine().lower()
         is_arm = "arm" in arch or "aarch" in arch or os.environ.get("PROCESSOR_ARCHITECTURE", "").lower() == "arm64"
         if is_arm:
@@ -355,22 +438,30 @@ class ReLiveApp:
             t_arm.start()
             self.log("[+] Auto-sblocco ARM64 attivo e in monitoraggio.")
 
+    def _run_smart_proxy(self):
+        try:
+            httpd = ThreadedHTTPServer(('127.0.0.1', 8888), SmartProxyHandler)
+            self.log("[+] Smart Proxy attivo su 127.0.0.1:8888 (intercetta tutti i CID e domini *.live.com).")
+            httpd.serve_forever()
+        except Exception as e:
+            self.log(f"[*] Smart Proxy errore: {e}")
+
     def _run_port_80(self):
         try:
-            self.httpd_80 = ThreadedHTTPServer(('0.0.0.0', 80), ReLiveBridgeHandler)
-            self.log("[+] Porta 80 attiva (HTTP Bridge pronto).")
-            self.httpd_80.serve_forever()
+            httpd = ThreadedHTTPServer(('0.0.0.0', 80), ReLiveBridgeHandler)
+            self.log("[+] Porta 80 attiva (HTTP Bridge).")
+            httpd.serve_forever()
         except Exception as e:
             self.log(f"[*] Porta 80 non disponibile: {e}")
 
     def _run_port_443(self):
         try:
-            self.httpd_443 = ThreadedHTTPServer(('0.0.0.0', 443), ReLiveBridgeHandler)
+            httpd = ThreadedHTTPServer(('0.0.0.0', 443), ReLiveBridgeHandler)
             ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
             ctx.load_cert_chain(certfile=CERT_FILE, keyfile=KEY_FILE)
-            self.httpd_443.socket = ctx.wrap_socket(self.httpd_443.socket, server_side=True)
-            self.log("[+] Porta 443 attiva (HTTPS Bridge SSL pronto).")
-            self.httpd_443.serve_forever()
+            httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
+            self.log("[+] Porta 443 attiva (HTTPS Bridge SSL).")
+            httpd.serve_forever()
         except Exception as e:
             self.log(f"[*] Porta 443 non disponibile: {e}")
 
@@ -380,23 +471,25 @@ class ReLiveApp:
             self.log("[+] Avvio di Windows Live Raccolta Foto...")
             subprocess.Popen([pg_path])
         else:
-            self.log(f"[!] File non trovato: {pg_path}")
-            messagebox.showwarning("Non trovato", f"Impossibile trovare Raccolta Foto in:\n{pg_path}")
+            messagebox.showwarning("Non trovato", f"Raccolta Foto non trovata in:\n{pg_path}")
+
+    def launch_mail(self):
+        mail_path = r"C:\Program Files (x86)\Windows Live\Mail\wlmail.exe"
+        if os.path.exists(mail_path):
+            self.log("[+] Avvio di Windows Live Mail...")
+            subprocess.Popen([mail_path])
+        else:
+            messagebox.showwarning("Non trovato", f"Windows Live Mail non trovata in:\n{mail_path}")
 
     def open_portal(self):
-        self.log("[*] Apertura portale ReLive nel browser...")
         webbrowser.open(REMOTE_SERVER)
 
     def open_escargot(self):
-        self.log("[*] Apertura Escargot Chat nel browser...")
         webbrowser.open("https://escargot.chat")
 
-    def repair_env(self):
-        self.log("[*] Verifica ed eventuale ripristino di hosts e certificato...")
-        check_and_repair_env()
-        self.log("[+] Verifica completata con successo.")
-        messagebox.showinfo("ReLive", "Certificato SSL e reindirizzamenti file hosts verificati con successo!")
-
+    def on_close(self):
+        disable_pac_proxy()
+        self.root.destroy()
 
 def is_admin():
     try:
@@ -406,7 +499,6 @@ def is_admin():
 
 def main():
     if not is_admin():
-        # Re-run with admin elevation
         try:
             script = os.path.abspath(sys.argv[0])
             params = " ".join([f'"{arg}"' for arg in sys.argv[1:]])
