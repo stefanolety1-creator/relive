@@ -249,6 +249,7 @@
         </div>
         <div class="wl-user-widget">
             {% if current_user %}
+                <img src="/static/img/avatar.png" style="width:26px; height:26px; border-radius:50%; object-fit:cover; border:1px solid #b2d1ea; vertical-align:middle;" alt="Avatar">
                 <span class="user-status-dot"></span>
                 <span class="user-name">{{ current_user.display_name }} ({{ current_user.email }})</span>
                 <a href="/skydrive" class="wl-btn wl-btn-primary" style="padding: 3px 10px; font-size: 11px;">Mio SkyDrive</a>

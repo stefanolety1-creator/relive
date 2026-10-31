@@ -62,6 +62,9 @@ def build_profile_xml(user: dict = None) -> str:
     <State>RM</State>
     <PostalCode>00100</PostalCode>
     <TimeZone>+01:00</TimeZone>
+    <UserTileURL>/static/img/avatar.png</UserTileURL>
+    <TileURL>/static/img/avatar.png</TileURL>
+    <PhotoURL>/static/img/avatar.png</PhotoURL>
     <FirstNameLastModified>2026-10-29T20:00:00Z</FirstNameLastModified>
     <LastNameLastModified>2026-10-29T20:00:00Z</LastNameLastModified>
 </PersonalContactProfile>""".strip()
