@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Windows Live SkyDrive - File e Cartelle{% endblock %}
+{% block service_name %}SkyDrive{% endblock %}
+
+{% block header_extra %}
+    <span class="backend-badge" title="Tutti i file vengono memorizzati su questo cloud">
+        ☁️ {{ backend_name }}
+    </span>
+{% endblock %}
+
+{% block content %}
+<!-- Command Bar -->
+<div class="wl-toolbar">
+    <button class="wl-btn wl-btn-primary" onclick="openModal('uploadModal')">
+        <span>⬆️</span> Carica file
+    </button>
+    <button class="wl-btn" onclick="openModal('folderModal')">
+        <span>📁</span> Nuova cartella
+    </button>
+    <a href="/skydrive?folder={{ current_folder }}" class="wl-btn">
+        <span>🔄</span> Aggiorna
+    </a>
+</div>
+
+<!-- Breadcrumb Navigation -->
+<div class="wl-breadcrumb-bar">
+    <a href="/skydrive">SkyDrive</a>
+    {% if current_folder and current_folder != 'root' %}
+        <span class="breadcrumb-separator">&gt;</span>
+        <span>{{ current_folder_name }}</span>
+    {% endif %}
+</div>
+
+<!-- Main Area -->
+<main class="wl-main-content">
+    {% if items %}
+        <div class="items-grid">
+            {% for item in items %}
+                <div class="wl-card">
+                    <div class="wl-card-icon">
+                        {% if item.is_folder %}
+                            📁
+                        {% elif 'image' in item.mime_type %}
+                            🖼️
+                        {% elif 'pdf' in item.mime_type %}
+                            📄
+                        {% elif 'zip' in item.mime_type or 'rar' in item.mime_type %}
+                            🗜️
+                        {% elif 'audio' in item.mime_type or 'mp3' in item.mime_type %}
+                            🎵
+                        {% elif 'video' in item.mime_type %}
+                            🎬
+                        {% else %}
+                            📝
+                        {% endif %}
+                    </div>
+                    
+                    {% if item.is_folder %}
+                        <a href="/skydrive?folder={{ item.id }}&name={{ item.name }}" class="wl-card-title">
+                            {{ item.name }}
+                        </a>
+                        <div class="wl-card-meta">Cartella</div>
+                    {% else %}
+                        <div class="wl-card-title" title="{{ item.name }}">{{ item.name }}</div>
+                        <div class="wl-card-meta">
+                            {{ (item.size_bytes / 1024)|round(1) }} KB &bull; {{ item.modified }}
+                        </div>
+                    {% endif %}
+
+                    <div class="wl-card-actions">
+                        {% if not item.is_folder %}
+                            <a href="/skydrive/download?file_id={{ item.id }}" class="action-link" download>Scarica</a>
+                        {% endif %}
+                        <form method="POST" action="/skydrive/delete" style="display:inline;" onsubmit="return confirm('Confermi l\'eliminazione?');">
+                            <input type="hidden" name="item_id" value="{{ item.id }}">
+                            <input type="hidden" name="parent_folder" value="{{ current_folder }}">
+                            <button type="submit" class="action-link action-delete" style="background:none;border:none;cursor:pointer;">Elimina</button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📂</div>
+            <h3>Questa cartella è vuota</h3>
+            <p>Carica dei file o crea una cartella per iniziare.</p>
+        </div>
+    {% endif %}
+</main>
+
+<!-- Modal: Nuova Cartella -->
+<div class="modal-overlay" id="folderModal">
+    <div class="modal-card">
+        <div class="modal-header">Crea nuova cartella in SkyDrive</div>
+        <form method="POST" action="/skydrive/folder/create">
+            <div class="modal-body">
+                <input type="hidden" name="parent_folder" value="{{ current_folder }}">
+                <div class="form-group">
+                    <label for="folder_name">Nome della cartella</label>
+                    <input type="text" id="folder_name" name="folder_name" class="form-control" placeholder="es. Vacanze 2026" required autofocus>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="wl-btn" onclick="closeModal('folderModal')">Annulla</button>
+                <button type="submit" class="wl-btn wl-btn-primary">Crea cartella</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Carica File -->
+<div class="modal-overlay" id="uploadModal">
+    <div class="modal-card">
+        <div class="modal-header">Carica file su SkyDrive</div>
+        <form method="POST" action="/skydrive/upload" enctype="multipart/form-data">
+            <div class="modal-body">
+                <input type="hidden" name="parent_folder" value="{{ current_folder }}">
+                <div class="form-group">
+                    <label for="file">Seleziona uno o più file dal computer</label>
+                    <input type="file" id="file" name="file" class="form-control" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="wl-btn" onclick="closeModal('uploadModal')">Annulla</button>
+                <button type="submit" class="wl-btn wl-btn-primary">Carica su SkyDrive</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openModal(id) {
+    document.getElementById(id).style.display = 'flex';
+}
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+// Close modal on background click
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal-overlay')) {
+        event.target.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

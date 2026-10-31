@@ -1,0 +1,430 @@
+/* Windows Live SkyDrive - Authentic Wave 3 / Wave 4 Stylesheet */
+:root {
+    --wl-blue: #0972b6;
+    --wl-dark-blue: #004b87;
+    --wl-light-blue: #eef5fb;
+    --wl-border-blue: #b2d1ea;
+    --wl-text-main: #222222;
+    --wl-text-muted: #666666;
+    --wl-link: #0972b6;
+    --wl-accent-orange: #f26522;
+    --wl-toolbar-bg: linear-gradient(180deg, #fbfdfe 0%, #e6eff7 100%);
+    --wl-header-bg: linear-gradient(180deg, #ffffff 0%, #f0f6fb 100%);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Segoe UI", "Tahoma", "Verdana", sans-serif;
+    font-size: 13px;
+    color: var(--wl-text-main);
+    background-color: #f6f9fc;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+a {
+    color: var(--wl-link);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* TOP GLOBAL BAR */
+.wl-global-nav {
+    background: #ffffff;
+    border-bottom: 1px solid #dbe6ef;
+    padding: 6px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+
+.wl-services-links a {
+    color: #444444;
+    margin-right: 18px;
+    font-weight: 500;
+}
+
+.wl-services-links a.active {
+    color: var(--wl-blue);
+    font-weight: bold;
+    border-bottom: 2px solid var(--wl-blue);
+    padding-bottom: 4px;
+}
+
+.wl-user-widget {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-status-dot {
+    width: 9px;
+    height: 9px;
+    background-color: #55b83b; /* Classic MSN online green */
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #222;
+}
+
+.user-signout {
+    color: #777;
+    margin-left: 8px;
+}
+
+/* BRAND HEADER */
+.wl-brand-header {
+    background: var(--wl-header-bg);
+    border-bottom: 1px solid var(--wl-border-blue);
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wl-logo-area {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.wl-logo-main {
+    font-size: 24px;
+    font-weight: 300;
+    letter-spacing: -0.5px;
+    color: #333;
+}
+
+.wl-logo-main span {
+    font-weight: 700;
+    color: #0072c6;
+}
+
+.wl-service-subtitle {
+    font-size: 20px;
+    color: #666;
+    font-weight: 300;
+}
+
+.backend-badge {
+    background: #eaf3fa;
+    border: 1px solid #c2dcf0;
+    color: #005a9c;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* TOOLBAR / COMMAND BAR */
+.wl-toolbar {
+    background: var(--wl-toolbar-bg);
+    border-bottom: 1px solid #c6d9e8;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.wl-btn {
+    background: linear-gradient(180deg, #ffffff 0%, #ebf2f8 100%);
+    border: 1px solid #adc7dd;
+    border-radius: 3px;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: #1b3d5b;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.wl-btn:hover {
+    background: linear-gradient(180deg, #fcfdfe 0%, #d8e8f5 100%);
+    border-color: #7da5c6;
+}
+
+.wl-btn:active {
+    background: #d8e8f5;
+}
+
+.wl-btn-primary {
+    background: linear-gradient(180deg, #2b8ee3 0%, #0d6ab6 100%);
+    border-color: #095897;
+    color: white;
+}
+
+.wl-btn-primary:hover {
+    background: linear-gradient(180deg, #439dec 0%, #1777c5 100%);
+    color: white;
+}
+
+/* BREADCRUMB */
+.wl-breadcrumb-bar {
+    background: #ffffff;
+    border-bottom: 1px solid #e1eaf0;
+    padding: 10px 20px;
+    font-size: 13px;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.breadcrumb-separator {
+    color: #999;
+}
+
+/* MAIN CONTENT */
+.wl-main-content {
+    flex: 1;
+    padding: 20px;
+}
+
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+/* FOLDER & FILE TILES */
+.wl-card {
+    background: #ffffff;
+    border: 1px solid #d4e2ee;
+    border-radius: 4px;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.15s ease;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.wl-card:hover {
+    border-color: #79a9d1;
+    box-shadow: 0 2px 8px rgba(0, 114, 198, 0.15);
+    background: #fcfeff;
+}
+
+.wl-card-icon {
+    font-size: 44px;
+    margin-bottom: 10px;
+}
+
+.wl-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #222;
+    word-break: break-word;
+    max-width: 100%;
+    margin-bottom: 4px;
+}
+
+.wl-card-meta {
+    font-size: 11px;
+    color: #777;
+    margin-bottom: 10px;
+}
+
+.wl-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.action-link {
+    font-size: 11px;
+    color: #0072c6;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.action-link:hover {
+    background: #eaf3fa;
+    text-decoration: none;
+}
+
+.action-delete {
+    color: #c9302c;
+}
+
+.action-delete:hover {
+    background: #fdf0f0;
+}
+
+/* EMPTY STATE */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #777;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    color: #a4c2db;
+}
+
+/* AUTH / LOGIN PAGE */
+.auth-wrapper {
+    max-width: 440px;
+    margin: 60px auto;
+    background: #ffffff;
+    border: 1px solid #c8d9e8;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+
+.auth-header {
+    background: linear-gradient(180deg, #0972b6 0%, #00508a 100%);
+    color: white;
+    padding: 20px;
+}
+
+.auth-header h1 {
+    font-size: 20px;
+    font-weight: 300;
+}
+
+.auth-header p {
+    font-size: 12px;
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+.auth-body {
+    padding: 24px 20px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+}
+
+.input-with-suffix {
+    display: flex;
+    align-items: center;
+    border: 1px solid #adc7dd;
+    border-radius: 3px;
+    background: white;
+}
+
+.input-with-suffix input {
+    border: none;
+    padding: 8px 10px;
+    flex: 1;
+    font-size: 13px;
+    outline: none;
+}
+
+.input-suffix {
+    background: #eef5fb;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: #005a9c;
+    font-weight: bold;
+    border-left: 1px solid #adc7dd;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #adc7dd;
+    border-radius: 3px;
+    font-size: 13px;
+    outline: none;
+    font-family: inherit;
+}
+
+.form-control:focus, .input-with-suffix:focus-within {
+    border-color: #0072c6;
+    box-shadow: 0 0 4px rgba(0, 114, 198, 0.3);
+}
+
+.auth-footer {
+    background: #f4f8fb;
+    border-top: 1px solid #e1eaf0;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+
+.error-banner {
+    background: #ffebe8;
+    border: 1px solid #dd3c10;
+    color: #900;
+    padding: 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    margin-bottom: 16px;
+}
+
+/* MODAL */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-card {
+    background: white;
+    width: 90%;
+    max-width: 420px;
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+
+.modal-header {
+    background: var(--wl-toolbar-bg);
+    border-bottom: 1px solid #c6d9e8;
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #1b3d5b;
+}
+
+.modal-body {
+    padding: 16px;
+}
+
+.modal-footer {
+    background: #f4f8fb;
+    border-top: 1px solid #e1eaf0;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Windows Live SkyDrive{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/live.css">
+    <link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☁️</text></svg>">
+</head>
+<body>
+    <!-- Top Global Bar -->
+    <header class="wl-global-nav">
+        <nav class="wl-services-links">
+            <a href="https://escargot.chat" target="_blank" rel="noopener noreferrer" style="color:#d85100; font-weight:bold;" title="Windows Live Messenger (Escargot Chat)">Messenger ↗</a>
+            <a href="/mail" title="Windows Live Mail">Mail</a>
+            <a href="/writer" title="Windows Live Writer">Writer</a>
+            <a href="/photos" title="Windows Live Raccolta Foto">Raccolta foto</a>
+            <a href="/skydrive" class="active" title="Windows Live SkyDrive">SkyDrive</a>
+        </nav>
+        
+        <div class="wl-user-widget">
+            {% if current_user %}
+                <span class="user-status-dot" title="Stato: Online"></span>
+                <span class="user-name">{{ current_user.display_name }} ({{ current_user.email }})</span>
+                <a href="/auth/logout" class="user-signout">Disconnetti</a>
+            {% else %}
+                <a href="/auth/login" class="wl-btn">Accedi con Windows Live ID</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Main Brand Header -->
+    <div class="wl-brand-header">
+        <div class="wl-logo-area">
+            <h1 class="wl-logo-main">Windows <span>Live</span></h1>
+            <span class="wl-service-subtitle">{% block service_name %}SkyDrive{% endblock %}</span>
+        </div>
+        <div>
+            {% block header_extra %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Page Specific Toolbar & Content -->
+    {% block content %}{% endblock %}
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

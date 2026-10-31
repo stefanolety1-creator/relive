@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReLive — Il Revival Ufficiale di Windows Live Essentials</title>
+    <link rel="stylesheet" href="/static/css/live.css">
+    <link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦋</text></svg>">
+    <style>
+        /* ReLive Portal Special Aero Styling */
+        .relive-hero {
+            background: linear-gradient(135deg, #0972b6 0%, #034b7f 50%, #012b4d 100%);
+            color: #ffffff;
+            padding: 45px 24px;
+            box-shadow: inset 0 -3px 8px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .relive-hero::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .relive-container {
+            max-width: 1140px;
+            margin: 0 auto;
+        }
+        .hero-columns {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .hero-left {
+            flex: 1.2;
+            min-width: 320px;
+        }
+        .hero-right {
+            flex: 1;
+            min-width: 320px;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(4px);
+        }
+        .hero-title {
+            font-size: 38px;
+            font-weight: 300;
+            line-height: 1.15;
+            margin-bottom: 14px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .hero-title strong {
+            font-weight: 700;
+            color: #fff;
+        }
+        .hero-desc {
+            font-size: 15px;
+            line-height: 1.5;
+            color: #e2f0fb;
+            margin-bottom: 24px;
+        }
+        .hero-features-list {
+            list-style: none;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .hero-feature-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            background: rgba(255,255,255,0.08);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        /* Glass Form Card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            color: #222;
+            border-radius: 8px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.4);
+            padding: 24px 28px;
+            backdrop-filter: blur(8px);
+        }
+        .glass-card h2 {
+            color: #004b87;
+            font-size: 20px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .glass-card p.subtitle {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 18px;
+        }
+
+        /* Sections */
+        .section-wrap {
+            padding: 45px 24px;
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .section-header h2 {
+            font-size: 26px;
+            color: #004b87;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .section-header p {
+            color: #666;
+            font-size: 14px;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        /* Services Grid */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .service-box {
+            background: #ffffff;
+            border: 1px solid #c8d9e8;
+            border-radius: 8px;
+            padding: 22px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .service-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(0, 114, 198, 0.12);
+            border-color: #0072c6;
+        }
+        .service-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        .service-box h3 {
+            font-size: 16px;
+            color: #004b87;
+            margin-bottom: 8px;
+        }
+        .service-box p {
+            font-size: 12px;
+            color: #555;
+            line-height: 1.45;
+            flex: 1;
+        }
+        .service-tag {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-top: 12px;
+            align-self: flex-start;
+        }
+        .tag-active { background: #e6f4ea; color: #137333; }
+        .tag-partner { background: #fef7e0; color: #b06000; }
+
+        /* Setup Box */
+        .setup-banner {
+            background: #ffffff;
+            border: 1px solid #c8d9e8;
+            border-radius: 8px;
+            padding: 28px;
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .setup-banner-text {
+            flex: 1;
+            min-width: 280px;
+        }
+        .setup-banner-text h3 {
+            color: #004b87;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        .setup-banner-text p {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.4;
+        }
+
+        /* Escargot Callout */
+        .escargot-callout {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e1effe 100%);
+            border: 1px solid #b8daff;
+            border-radius: 8px;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 35px;
+            flex-wrap: wrap;
+        }
+        .escargot-logo-text {
+            font-size: 26px;
+            font-weight: 700;
+            color: #d85100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <header class="wl-global-nav">
+        <div class="wl-services-links">
+            <a href="/" class="active" style="font-weight: bold; color: #0072c6;">ReLive Home</a>
+            <a href="https://escargot.chat" target="_blank" rel="noopener noreferrer" style="color: #d85100; font-weight: bold;">Messenger ↗ (Escargot)</a>
+            <a href="/photos">Raccolta Foto</a>
+            <a href="/skydrive">SkyDrive</a>
+            <a href="/mail">Mail</a>
+            <a href="/writer">Writer</a>
+        </div>
+        <div class="wl-user-widget">
+            {% if current_user %}
+                <span class="user-status-dot"></span>
+                <span class="user-name">{{ current_user.display_name }} ({{ current_user.email }})</span>
+                <a href="/skydrive" class="wl-btn wl-btn-primary" style="padding: 3px 10px; font-size: 11px;">Mio SkyDrive</a>
+                <a href="/auth/logout" class="user-signout">Disconnetti</a>
+            {% else %}
+                <a href="/auth/login" class="wl-btn">Accedi</a>
+                <a href="#register-section" class="wl-btn wl-btn-primary">Registrati gratis</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Main Hero -->
+    <section class="relive-hero">
+        <div class="relive-container">
+            <div class="hero-columns">
+                
+                <!-- Left: Project Presentation -->
+                <div class="hero-left">
+                    <div class="hero-badge">
+                        <span>🦋</span> Progetto ReLive &bull; Windows Live Revival
+                    </div>
+                    <h1 class="hero-title">
+                        Rivivi <strong>Windows Live</strong><br>come nel 2009.
+                    </h1>
+                    <p class="hero-desc">
+                        <strong>ReLive</strong> è il server revival centralizzato e open source dedicato a riportare in vita la suite <strong>Windows Live Essentials Wave 3</strong> (Raccolta Foto, SkyDrive con 25 GB su Google Drive, Spaces, Mail e Writer).
+                    </p>
+
+                    <ul class="hero-features-list">
+                        <li class="hero-feature-item">
+                            <span>📷</span> <strong>Raccolta Foto:</strong> Login e album cloud
+                        </li>
+                        <li class="hero-feature-item">
+                            <span>☁️</span> <strong>SkyDrive:</strong> 25 GB su Google Drive
+                        </li>
+                        <li class="hero-feature-item">
+                            <span>🔑</span> <strong>Live ID Unificato:</strong> @live.it, @hotmail.com
+                        </li>
+                        <li class="hero-feature-item">
+                            <span>💬</span> <strong>Messenger:</strong> Partner con Escargot
+                        </li>
+                    </ul>
+
+                    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                        <a href="#progetto" class="wl-btn" style="background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.4); color:white; padding:8px 18px; font-weight:bold;">
+                            Scopri come funziona &darr;
+                        </a>
+                        <a href="/download/configura-client.bat" class="wl-btn" style="background:#55b83b; border:none; color:white; padding:8px 18px; font-weight:bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                            📥 Scarica Configura_Client.bat
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right: Quick Registration Card -->
+                <div class="hero-right" id="register-section">
+                    <div class="glass-card">
+                        <h2>Crea il tuo Windows Live ID</h2>
+                        <p class="subtitle">Registrati in pochi secondi per accedere a tutte le app della suite</p>
+
+                        {% if error %}
+                            <div class="error-banner" style="margin-bottom:14px;">{{ error }}</div>
+                        {% endif %}
+
+                        <form method="POST" action="/auth/register">
+                            <div style="display: flex; gap: 8px;">
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="first_name">Nome</label>
+                                    <input type="text" id="first_name" name="first_name" class="form-control" placeholder="Stefano" required>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="last_name">Cognome</label>
+                                    <input type="text" id="last_name" name="last_name" class="form-control" placeholder="De Luca" required>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 8px;">
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="birth_date">Data di nascita</label>
+                                    <input type="date" id="birth_date" name="birth_date" class="form-control" value="1995-01-01" required>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="gender">Sesso</label>
+                                    <select id="gender" name="gender" class="form-control" style="height: 32px;">
+                                        <option value="m">Maschio</option>
+                                        <option value="f">Femmina</option>
+                                        <option value="u">Altro</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="username">Scegli il tuo indirizzo Windows Live</label>
+                                <div class="input-with-suffix">
+                                    <input type="text" id="username" name="username" placeholder="nomeutente" required>
+                                    <select name="domain" style="border:none; background:transparent; font-size:12px; color:#333; outline:none; cursor:pointer; font-weight:600;">
+                                        <option value="@live.it">@live.it</option>
+                                        <option value="@live.com">@live.com</option>
+                                        <option value="@hotmail.com">@hotmail.com</option>
+                                        <option value="@msn.com">@msn.com</option>
+                                        <option value="@outlook.com">@outlook.com</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="forward_email">Email reale per inoltro <span style="font-size:11px; color:#888; font-weight:normal;">(opzionale)</span></label>
+                                <input type="email" id="forward_email" name="forward_email" class="form-control" placeholder="es. tuonome@gmail.com">
+                                <small style="font-size:11px; color:#666; display:block; margin-top:3px; line-height:1.3;">
+                                    ✉️ Riceverai le email e le verifiche inviate al tuo Live ID direttamente sulla tua casella reale.
+                                </small>
+                            </div>
+
+                            <div style="margin-top: 16px;">
+                                <button type="submit" class="wl-btn wl-btn-primary" style="width: 100%; justify-content: center; padding: 10px; font-weight: bold; font-size: 14px;">
+                                    Crea Account ReLive
+                                </button>
+                            </div>
+
+                            <div style="text-align:center; margin-top:10px; font-size:11px; color:#666;">
+                                Hai già un account? <a href="/auth/login" style="font-weight:bold;">Accedi qui</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Project Description Section -->
+    <main class="relive-container section-wrap" id="progetto">
+        
+        <div class="section-header">
+            <h2>Cos'è il Progetto ReLive?</h2>
+            <p>
+                Negli anni 2000, <strong>Windows Live Essentials</strong> è stato il cuore pulsante dell'esperienza Windows. Con la chiusura dei server Microsoft, molte applicazioni hanno smesso di funzionare. <strong>ReLive</strong> nasce per ripristinare l'infrastruttura di rete originale.
+            </p>
+        </div>
+
+        <div class="services-grid">
+            
+            <!-- Raccolta Foto -->
+            <div class="service-box">
+                <div class="service-icon">📷</div>
+                <h3>Raccolta Foto Windows Live</h3>
+                <p>
+                    L'organizzatore fotografico più amato. Grazie a ReLive puoi effettuare il login autentico con il tuo Windows Live ID, gestire i tag persone e pubblicare i tuoi album direttamente su SkyDrive.
+                </p>
+                <span class="service-tag tag-active">✓ Supportato al 100%</span>
+            </div>
+
+            <!-- SkyDrive -->
+            <div class="service-box">
+                <div class="service-icon">☁️</div>
+                <h3>Windows Live SkyDrive</h3>
+                <p>
+                    25 GB di spazio cloud integrato con l'API di Google Drive. Puoi caricare documenti, foto e cartelle sia via interfaccia web retrò che direttamente dalle app desktop della suite.
+                </p>
+                <span class="service-tag tag-active">✓ 25 GB su Google Drive</span>
+            </div>
+
+            <!-- Mail -->
+            <div class="service-box">
+                <div class="service-icon">✉️</div>
+                <h3>Windows Live Mail</h3>
+                <p>
+                    Il client di posta desktop con sincronizzazione calendario e contatti. ReLive implementa l'endpoint DeltaSync e SMTP per inviare e ricevere posta con il tuo dominio @live.it.
+                </p>
+                <span class="service-tag tag-active">✓ DeltaSync &bull; SMTP</span>
+            </div>
+
+            <!-- Writer -->
+            <div class="service-box">
+                <div class="service-icon">✍️</div>
+                <h3>Windows Live Writer</h3>
+                <p>
+                    L'editor WYSIWYG per blog. Supporta MetaWeblog API con caricamento istantaneo delle immagini e formattazione tipografica identica a quella stampata.
+                </p>
+                <span class="service-tag tag-active">✓ MetaWeblog API</span>
+            </div>
+
+        </div>
+
+        <!-- Escargot Chat Callout -->
+        <div class="escargot-callout">
+            <div style="font-size: 40px;">💬</div>
+            <div style="flex: 1; min-width: 260px;">
+                <div class="escargot-logo-text">
+                    <span>Windows Live Messenger</span> &rarr; <span>Escargot Chat</span>
+                </div>
+                <p style="font-size: 13px; color: #444; margin-top: 6px; line-height: 1.45;">
+                    Per il servizio di messaggistica istantanea (MSN / Windows Live Messenger) consigliamo vivamente l'utilizzo della straordinaria rete di <strong>Escargot Chat</strong>. ReLive si concentra sul far rivivere il resto della suite Windows Live Essentials, integrandosi armoniosamente con l'ecosistema esistente.
+                </p>
+            </div>
+            <div>
+                <a href="https://escargot.chat" target="_blank" rel="noopener noreferrer" class="wl-btn" style="background:#d85100; color:white; font-weight:bold; padding:10px 20px; font-size:13px; border:none; box-shadow: 0 2px 6px rgba(216,81,0,0.3);">
+                    Visita Escargot Chat &rarr;
+                </a>
+            </div>
+        </div>
+
+        <!-- How to Connect Banner -->
+        <div class="setup-banner">
+            <div style="font-size: 46px;">🚀</div>
+            <div class="setup-banner-text">
+                <h3>Come connettere il tuo PC a ReLive</h3>
+                <p>
+                    Basta scaricare ed eseguire il file di configurazione con un doppio clic per reindirizzare in sicurezza le chiamate di autenticazione al server ReLive. Nessuna modifica complessa o file DLL di sistema compromessi!
+                </p>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="/download/configura-client.bat" class="wl-btn wl-btn-primary" style="padding: 10px 18px; font-weight: bold;">
+                    📥 Scarica Configura_Client.bat
+                </a>
+                <a href="/skydrive" class="wl-btn" style="padding: 10px 18px; font-weight: bold;">
+                    Accedi a SkyDrive Web
+                </a>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer style="background:#ffffff; border-top:1px solid #dbe6ef; padding:24px; text-align:center; font-size:12px; color:#777; margin-top:40px;">
+        <div class="relive-container">
+            <p style="margin-bottom:6px;">
+                <strong>Progetto ReLive</strong> &bull; Server Revival per Windows Live Essentials Wave 3 (2009).
+            </p>
+            <p>
+                Tutti i marchi appartengono ai rispettivi proprietari. ReLive è un progetto no-profit della community creato a scopo di preservazione storica del software.
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>
