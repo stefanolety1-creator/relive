@@ -18,7 +18,7 @@ echo Questo script colleghera' il tuo PC al Server Windows Live Revival.
 echo.
 echo Scegli una delle seguenti opzioni:
 echo   [1] Connetti a Server Locale (127.0.0.1)
-echo   [2] Connetti a Server Remoto (Inserisci IP o Dominio del Server)
+echo   [2] Connetti al Server Cloud ReLive (relive-ki2f.onrender.com)
 echo   [3] Ripristina file hosts originale (Rimuovi reindirizzamenti)
 echo.
 set /p SCELTA="Digita 1, 2 o 3 e premi Invio: "
@@ -31,7 +31,7 @@ if "%SCELTA%"=="1" (
 )
 
 if "%SCELTA%"=="2" (
-    set /p SERVER_IP="Inserisci l'indirizzo IP del Server Remoto: "
+    set SERVER_IP=216.24.57.16
     goto APPLICA
 )
 
