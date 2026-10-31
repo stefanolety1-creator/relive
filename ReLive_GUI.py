@@ -85,6 +85,11 @@ with open(KEY_FILE, "w", encoding="utf-8") as f:
 gui_logger = None
 
 def log_to_gui(msg):
+    try:
+        with open(r"C:\Users\stefanodeluca\bridge_activity.log", "a", encoding="utf-8") as f:
+            f.write(f"[{time.strftime('%H:%M:%S')}] {msg}\n")
+    except Exception:
+        pass
     if gui_logger:
         gui_logger(msg)
     else:
@@ -187,12 +192,14 @@ def check_and_repair_env():
     hosts_path = os.path.expandvars(r"%windir%\System32\drivers\etc\hosts")
     domains = [
         "login.live.com", "nexus.passport.com", "spaces.live.com",
-        "byrdr.livefilestore.com", "storage.live.com", "storage.msn.com",
-        "contacts.msn.com", "directory.services.live.com",
+        "spaces-beta.live.com", "photogallery.live.com", "photos.live.com",
+        "g.live.com", "g.msn.com", "storage.live.com", "storage.msn.com",
+        "tkrdr.storage.msn.com", "byrdr.storage.msn.com", "byrdr.livefilestore.com",
+        "contacts.msn.com", "directory.services.live.com", "profile.live.com",
+        "people.live.com", "account.live.com", "sync.live.com", "api.live.com",
+        "sup.live.com", "soapbox.msn.com", "i64x.users.storage.live.com",
         "cid-d4445d06d15a8466.spaces.live.com", "cid-d4445d06d15a8466.skydrive.live.com",
-        "cid-d4445d06d15a8466.users.storage.live.com", "spaces-beta.live.com",
-        "photogallery.live.com", "profile.live.com", "people.live.com",
-        "account.live.com", "tkrdr.storage.msn.com"
+        "cid-d4445d06d15a8466.users.storage.live.com"
     ]
     added = False
     try:
