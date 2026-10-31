@@ -87,3 +87,34 @@ async def user_personal_contact_profile(user_id: str, request: Request):
 async def user_profile_catchall(user_id: str, rest_of_path: str, request: Request):
     logger.info(f"Profile sub-path requested: {rest_of_path} for user {user_id}")
     return Response(content=build_profile_xml(), media_type="application/web3s+xml; charset=utf-8")
+
+SCHEMATIZED_STORE_RESPONSE = """<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <soap:Body>
+        <GetProfileResponse xmlns="http://www.msn.com/webservices/storage/w10">
+            <GetProfileResult>
+                <ResourceID>00000000-0000-0000-0000-000000000001</ResourceID>
+                <DateModified>2026-10-31T17:00:00Z</DateModified>
+                <ExpressionProfile>
+                    <ResourceID>00000000-0000-0000-0000-000000000002</ResourceID>
+                    <DateModified>2026-10-31T17:00:00Z</DateModified>
+                    <DisplayName>Stefano De Luca</DisplayName>
+                    <DisplayNameLastModified>2026-10-31T17:00:00Z</DisplayNameLastModified>
+                    <PersonalStatus>Online con Windows Live</PersonalStatus>
+                    <PersonalStatusLastModified>2026-10-31T17:00:00Z</PersonalStatusLastModified>
+                    <StaticUserTilePublicURL>https://login.live.com/static/img/avatar.png</StaticUserTilePublicURL>
+                    <Photo>https://login.live.com/static/img/avatar.png</Photo>
+                    <Flags>0</Flags>
+                </ExpressionProfile>
+            </GetProfileResult>
+        </GetProfileResponse>
+    </soap:Body>
+</soap:Envelope>""".strip()
+
+@router.post("/storageservice/SchematizedStore.asmx")
+@router.get("/storageservice/SchematizedStore.asmx")
+@router.post("/SchematizedStore.asmx")
+@router.get("/SchematizedStore.asmx")
+async def schematized_store_service(request: Request):
+    logger.info(f"SchematizedStore SOAP request from {request.client.host if request.client else 'local'}")
+    return Response(content=SCHEMATIZED_STORE_RESPONSE, media_type="text/xml; charset=utf-8")
