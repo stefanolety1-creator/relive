@@ -72,9 +72,6 @@ def build_profile_xml(user: dict = None) -> str:
 @router.get("/wlpg.aspx")
 @router.post("/wlpg.aspx")
 async def spaces_wlpg_config(request: Request):
-    """
-    Windows Live Photo Gallery client verification and capabilities endpoint.
-    """
     logger.info(f"WLPG client config requested from {request.client.host if request.client else 'local'}")
     return Response(content=WLPG_XML, media_type="text/xml; charset=utf-8")
 
@@ -88,7 +85,11 @@ async def user_profile_catchall(user_id: str, rest_of_path: str, request: Reques
     logger.info(f"Profile sub-path requested: {rest_of_path} for user {user_id}")
     return Response(content=build_profile_xml(), media_type="application/web3s+xml; charset=utf-8")
 
-SCHEMATIZED_STORE_RESPONSE = """<?xml version="1.0" encoding="utf-8"?>
+# -------------------------------------------------------------------
+# SOAP SchematizedStore Responses
+# -------------------------------------------------------------------
+
+RESPONSE_GET_PROFILE = """<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
     <soap:Body>
         <GetProfileResponse xmlns="http://www.msn.com/webservices/storage/w10">
@@ -111,10 +112,124 @@ SCHEMATIZED_STORE_RESPONSE = """<?xml version="1.0" encoding="utf-8"?>
     </soap:Body>
 </soap:Envelope>""".strip()
 
+RESPONSE_GET_SPACE = """<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <soap:Body>
+        <GetSpaceResponse xmlns="http://www.msn.com/webservices/storage/w10">
+            <GetSpaceResult>
+                <ResourceID>00000000-0000-0000-0000-000000000003</ResourceID>
+                <Name>Album e Foto Personali</Name>
+                <Tagline>Il mio spazio su Windows Live Spaces</Tagline>
+                <DateCreated>2026-10-31T17:00:00Z</DateCreated>
+                <DateModified>2026-10-31T17:00:00Z</DateModified>
+            </GetSpaceResult>
+        </GetSpaceResponse>
+    </soap:Body>
+</soap:Envelope>""".strip()
+
+RESPONSE_GET_FOLDERS = """<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <soap:Body>
+        <GetFoldersResponse xmlns="http://www.msn.com/webservices/storage/w10">
+            <GetFoldersResult>
+                <Folder>
+                    <ResourceID>00000000-0000-0000-0000-000000000010</ResourceID>
+                    <FolderResourceID>00000000-0000-0000-0000-000000000010</FolderResourceID>
+                    <Name>Raccolta Foto Principale</Name>
+                    <DocumentCount>0</DocumentCount>
+                    <DateCreated>2026-10-31T17:00:00Z</DateCreated>
+                    <DateModified>2026-10-31T17:00:00Z</DateModified>
+                </Folder>
+            </GetFoldersResult>
+        </GetFoldersResponse>
+    </soap:Body>
+</soap:Envelope>""".strip()
+
+RESPONSE_GET_PHOTOS = """<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <soap:Body>
+        <GetPhotosResponse xmlns="http://www.msn.com/webservices/storage/w10">
+            <GetPhotosResult>
+            </GetPhotosResult>
+        </GetPhotosResponse>
+    </soap:Body>
+</soap:Envelope>""".strip()
+
+RESPONSE_FIND_PHOTOS = """<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <soap:Body>
+        <FindPhotosResponse xmlns="http://www.msn.com/webservices/storage/w10">
+            <FindPhotosResult>
+            </FindPhotosResult>
+        </FindPhotosResponse>
+    </soap:Body>
+</soap:Envelope>""".strip()
+
+RESPONSE_CREATE_FOLDER = """<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <soap:Body>
+        <CreateFolderResponse xmlns="http://www.msn.com/webservices/storage/w10">
+            <CreateFolderResult>
+                <ResourceID>00000000-0000-0000-0000-000000000020</ResourceID>
+                <FolderResourceID>00000000-0000-0000-0000-000000000020</FolderResourceID>
+            </CreateFolderResult>
+        </CreateFolderResponse>
+    </soap:Body>
+</soap:Envelope>""".strip()
+
+RESPONSE_CREATE_DOCUMENT = """<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <soap:Body>
+        <CreateDocumentResponse xmlns="http://www.msn.com/webservices/storage/w10">
+            <CreateDocumentResult>
+                <ResourceID>00000000-0000-0000-0000-000000000030</ResourceID>
+                <DocumentResourceID>00000000-0000-0000-0000-000000000030</DocumentResourceID>
+            </CreateDocumentResult>
+        </CreateDocumentResponse>
+    </soap:Body>
+</soap:Envelope>""".strip()
+
 @router.post("/storageservice/SchematizedStore.asmx")
 @router.get("/storageservice/SchematizedStore.asmx")
+@router.post("/storageservice/schematizedstore.asmx")
+@router.get("/storageservice/schematizedstore.asmx")
+@router.post("/StorageService/SchematizedStore.asmx")
+@router.get("/StorageService/SchematizedStore.asmx")
 @router.post("/SchematizedStore.asmx")
 @router.get("/SchematizedStore.asmx")
+@router.post("/schematizedstore.asmx")
+@router.get("/schematizedstore.asmx")
 async def schematized_store_service(request: Request):
-    logger.info(f"SchematizedStore SOAP request from {request.client.host if request.client else 'local'}")
-    return Response(content=SCHEMATIZED_STORE_RESPONSE, media_type="text/xml; charset=utf-8")
+    """
+    Handles SOAP calls from Windows Live Photo Gallery for Windows Live Spaces & Storage.
+    Supports GetProfile, GetSpace, GetFolders, GetPhotos, FindPhotos, CreateFolder, CreateDocument.
+    """
+    body_bytes = await request.body()
+    body_text = body_bytes.decode("utf-8", errors="ignore")
+    soap_action = request.headers.get("soapaction", "")
+
+    logger.info(f"SchematizedStore request: action='{soap_action}' (body len: {len(body_bytes)})")
+
+    req_lower = (soap_action + " " + body_text).lower()
+
+    if "getfolders" in req_lower:
+        logger.info("Serving GetFoldersResponse")
+        return Response(content=RESPONSE_GET_FOLDERS, media_type="text/xml; charset=utf-8")
+    elif "getspace" in req_lower:
+        logger.info("Serving GetSpaceResponse")
+        return Response(content=RESPONSE_GET_SPACE, media_type="text/xml; charset=utf-8")
+    elif "findphotos" in req_lower:
+        logger.info("Serving FindPhotosResponse")
+        return Response(content=RESPONSE_FIND_PHOTOS, media_type="text/xml; charset=utf-8")
+    elif "getphotos" in req_lower:
+        logger.info("Serving GetPhotosResponse")
+        return Response(content=RESPONSE_GET_PHOTOS, media_type="text/xml; charset=utf-8")
+    elif "createfolder" in req_lower:
+        logger.info("Serving CreateFolderResponse")
+        return Response(content=RESPONSE_CREATE_FOLDER, media_type="text/xml; charset=utf-8")
+    elif "createdocument" in req_lower:
+        logger.info("Serving CreateDocumentResponse")
+        return Response(content=RESPONSE_CREATE_DOCUMENT, media_type="text/xml; charset=utf-8")
+    else:
+        logger.info("Serving GetProfileResponse (default)")
+        return Response(content=RESPONSE_GET_PROFILE, media_type="text/xml; charset=utf-8")

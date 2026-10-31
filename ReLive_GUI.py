@@ -188,7 +188,11 @@ def check_and_repair_env():
     domains = [
         "login.live.com", "nexus.passport.com", "spaces.live.com",
         "byrdr.livefilestore.com", "storage.live.com", "storage.msn.com",
-        "contacts.msn.com", "directory.services.live.com"
+        "contacts.msn.com", "directory.services.live.com",
+        "cid-d4445d06d15a8466.spaces.live.com", "cid-d4445d06d15a8466.skydrive.live.com",
+        "cid-d4445d06d15a8466.users.storage.live.com", "spaces-beta.live.com",
+        "photogallery.live.com", "profile.live.com", "people.live.com",
+        "account.live.com", "tkrdr.storage.msn.com"
     ]
     added = False
     try:
